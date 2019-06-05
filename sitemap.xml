@@ -2,7 +2,7 @@
 <urlset xmlns='http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url>
 <loc>
-http://blogawesome.com/authors-output/Bob Bobbert.html
+https://maxweber.github.io/authors-output/Max Weber.html
 </loc>
 <lastmod>
 2019-06-05
@@ -10,7 +10,7 @@ http://blogawesome.com/authors-output/Bob Bobbert.html
 </url>
 <url>
 <loc>
-http://blogawesome.com/tags.html
+https://maxweber.github.io/tags.html
 </loc>
 <lastmod>
 2019-06-05
@@ -18,7 +18,7 @@ http://blogawesome.com/tags.html
 </url>
 <url>
 <loc>
-http://blogawesome.com/index.html
+https://maxweber.github.io/index.html
 </loc>
 <lastmod>
 2019-06-05
@@ -26,7 +26,7 @@ http://blogawesome.com/index.html
 </url>
 <url>
 <loc>
-http://blogawesome.com/404.html
+https://maxweber.github.io/404.html
 </loc>
 <lastmod>
 2019-06-05
@@ -34,7 +34,7 @@ http://blogawesome.com/404.html
 </url>
 <url>
 <loc>
-http://blogawesome.com/pages-output/about.html
+https://maxweber.github.io/pages-output/about.html
 </loc>
 <lastmod>
 2019-06-05
@@ -42,7 +42,7 @@ http://blogawesome.com/pages-output/about.html
 </url>
 <url>
 <loc>
-http://blogawesome.com/pages-output/another-page.html
+https://maxweber.github.io/tags-output/db-view.html
 </loc>
 <lastmod>
 2019-06-05
@@ -50,7 +50,7 @@ http://blogawesome.com/pages-output/another-page.html
 </url>
 <url>
 <loc>
-http://blogawesome.com/tags-output/not fetch.html
+https://maxweber.github.io/tags-output/ClojureScript.html
 </loc>
 <lastmod>
 2019-06-05
@@ -58,7 +58,7 @@ http://blogawesome.com/tags-output/not fetch.html
 </url>
 <url>
 <loc>
-http://blogawesome.com/tags-output/very fetch.html
+https://maxweber.github.io/tags-output/Clojure.html
 </loc>
 <lastmod>
 2019-06-05
@@ -66,7 +66,7 @@ http://blogawesome.com/tags-output/very fetch.html
 </url>
 <url>
 <loc>
-http://blogawesome.com/tags-output/cryogen.html
+https://maxweber.github.io/tags-output/Datomic.html
 </loc>
 <lastmod>
 2019-06-05
@@ -74,7 +74,7 @@ http://blogawesome.com/tags-output/cryogen.html
 </url>
 <url>
 <loc>
-http://blogawesome.com/posts-output/2014-11-04-second-post.html
+https://maxweber.github.io/posts-output/2019-06-04-approaching-the-web-after-tomorrow.html
 </loc>
 <lastmod>
 2019-06-05
@@ -82,23 +82,7 @@ http://blogawesome.com/posts-output/2014-11-04-second-post.html
 </url>
 <url>
 <loc>
-http://blogawesome.com/posts-output/2014-03-10-first-post.html
-</loc>
-<lastmod>
-2019-06-05
-</lastmod>
-</url>
-<url>
-<loc>
-http://blogawesome.com/posts-output/2016-01-07-docs.html
-</loc>
-<lastmod>
-2019-06-05
-</lastmod>
-</url>
-<url>
-<loc>
-http://blogawesome.com/archives.html
+https://maxweber.github.io/archives.html
 </loc>
 <lastmod>
 2019-06-05
