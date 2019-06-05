@@ -1,0 +1,57 @@
+{:title "Approaching The Web After Tomorrow - Part 1"
+ :layout :post
+ :tags  ["Clojure" "ClojureScript" "Datomic"]}
+
+My current venture is [Storrito.com](https://storrito.com/) where we
+had the chance to develop a system with Clojure, ClojureScript and
+Datomic from the ground up.
+
+This blog post series is about my attempt to implement [The Web After Tomorrow](https://tonsky.me/blog/the-web-after-tomorrow/) that
+[Nikita](https://twitter.com/nikitonsky) described in his [blog post](https://tonsky.me/blog/the-web-after-tomorrow/) back in 2015.
+
+
+In this blog post Nikita describes how modern real-time web
+applications should work. While the technology exists many web
+applications are still not fully real-time. Instead there are often
+multiple sections which have different levels of staleness. As an
+example he shows the Facebook web application:
+
+<img class="post-image" src="http://tonsky.me/blog/the-web-after-tomorrow/facebook.png"></img>
+(image source: https://tonsky.me/blog/the-web-after-tomorrow/)
+
+There are sections like the sidebar menu which are never refreshed
+after the page load. While other sections like the messenger and the
+unread message count receive real-time updates.
+
+At the end of the blog post Nikita describes how a full real-time web
+application might be implemented by using a combination of Datomic and
+DataScript. For the initial implementation of Storrito I followed this
+concept idea and tried to build a full real-time web application. On
+the server we were already using Datomic. On the client-side we added
+DataScript to our Reagent-based ClojureScript app.
+
+To avoid the complexities of premature performance optimizations and
+to have a first working version ready, I took an extreme
+shortcut. Instead of only loading the datoms which are relevant for
+the current UI state, we just loaded the complete customer database on
+the initial page load.
+
+This shortcut worked much longer than expected, since Storrito is a
+Single-Page-Application (SPA) and our users only needed to wait a
+little bit longer at the initial page load. Afterwards all changes
+were pushed in the form of small deltas (datoms) to the client.
+
+The database portion that needed to be loaded was very small for a
+normal user (only a few hundred datoms). But the number of datoms
+growed every time the user created or changed entities. Most of the
+users had to wait between 1-3 seconds at the initial page
+load.
+
+Luckily from a business perspective there were and still are many very
+frequent users, which creates hundreds or even thousands of new datoms
+every day. They needed to wait around 20-40 seconds for the initial
+page load. As you can imaging loading the entire customer database had
+become an unacceptable option soon.
+
+In the next blog post I will describe some of the ideas we had how to
+solve this challenge.
