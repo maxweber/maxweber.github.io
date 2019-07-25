@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"><![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"><![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"><![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!--><html lang="en"><!--<![endif]-->
+<head>
+    <!-- Website Template designed by www.downloadwebsitetemplates.co.uk -->
+    <!-- Modified to fit Cryogen.-->
+    <meta charset="UTF-8">
+    <title>The blog of Max Weber: Introducing db-view - Part 1</title>
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="images/ico/apple-touch-icon-144.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="images/ico/apple-touch-icon-114.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="images/ico/apple-touch-icon-72.png">
+    <link rel="apple-touch-icon-precomposed" href="images/ico/apple-touch-icon-57.png">
+    <link rel="shortcut icon" href="images/ico/favicon.png">
+    <!--[if IE]><![endif]-->
+    <link href="/css/buttons.css" rel="stylesheet" type="text/css" />
+    <link href="/css/menu.css" rel="stylesheet" type="text/css" />
+    <link href="/css/reset.css" rel="stylesheet" type="text/css" />
+    <link href="/css/style.css" rel="stylesheet" type="text/css" />
+    <link href="/css/typography.css" rel="stylesheet" type="text/css" />
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/styles/tomorrow-night-eighties.min.css">
+    <!--[if lt IE 9]><script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+</head>
+<body>
+
+<div id="left">
+
+    <p id="logo">
+        <a title="The blog of Max Weber" href="/">
+          <img src="/img/profile.jpg"></img>
+          <span class="text">Max Weber</span>
+        </a>
+    </p>
+
+    <div id="menucont" class="bodycontainer clearfix">
+        <div class="menutitle">
+            <p><span class="fa fa-reorder"></span><strong>Menu</strong></p>
+        </div>
+        <ul class="menu">
+            <li ><a title="Home" href="/">Home</a></li>
+            <li ><a title="Archives" href="/archives">Archives</a></li>
+            
+            <li >
+                <a href="/pages/about">About</a>
+            </li>
+            
+            <li><a title="RSS" href="/feed.xml">RSS</a></li>
+        </ul>
+    </div>
+
+    <div id="socialmedia" class="clearfix">
+        <ul>
+            <li><a title="GitHub" href="https://github.com/maxweber/" rel="external"><span class="fa fa-github"></span></a></li>
+            <li><a title="Twitter" href="https://twitter.com/webermaximilian" rel="external"><span class="fa fa-twitter"></span></a></li>
+        </ul>
+    </div>
+
+</div>
+
+<div id="right" class="clearfix">
+    
+<div id="post">
+    <div class="post-header">
+    <div id="post-meta" class="row">
+        <strong>25. Juli 2019</strong>
+        
+    </div>
+    <h1>Introducing db-view - Part 1</h1>
+</div>
+<div>
+    
+    <p>In my previous blog post series <a href='https://maxweber.github.io/blog/2019-06-04-approaching-the-web-after-tomorrow'>Approaching The Web After Tomorrow</a> I've talked about how I tried to implement the idea that <a href='https://twitter.com/nikitonsky'>Nikita</a> described in his blog post called <a href='https://tonsky.me/blog/the-web-after-tomorrow/'>The Web After Tomorrow</a>.</p><p>In <a href='https://maxweber.github.io/blog/2019-06-04-approaching-the-web-after-tomorrow'>part 1 of Approaching The Web After Tomorrow</a> I talked about how we used DataScript, Datomic and Clojure(Script) to build a real-time app for our SaaS product <a href='https://www.storrito.com'>Storrito.com</a> and what performance challenge the first implementation yielded. <a href='https://maxweber.github.io/blog/2019-06-08-approaching-the-web-after-tomorrow-part-2'>Part 2</a> was about some ideas I had to solve this performance challenge. Finally <a href='https://maxweber.github.io/blog/2019-06-15-approaching-the-web-after-tomorrow-part-3'>Part 3</a> was about what difficulties you can avoid by tailor-made your API for a single frontend and that big organizations tends to separate developers into frontend and backend developer teams.</p><p>For this blog post series I've prepared an example to introduce you to an approach I named "db-view". During my search for a good example use case, I noticed the deep division even more that splits our industry into frontend and backend software development. You probably all know the de-facto standard example of almost every frontend framework: the <a href='http://todomvc.com/'>TodoMVC</a>, an app to manage todo entries. New to me was that there is even a collection of example backend implementations for this todo app called <a href='https://www.todobackend.com/'>todobackend.com</a>. Interestingly enough it is hard to find examples that implements both, the frontend and the backend. This is also the case for another popular collection of examples: <a href='https://realworld.io/'>realworld.io</a> or how they call it "The mother of all demo apps", an exemplary fullstack clone of <a href='https://medium.com/'>Medium.com</a>. This project even enforces the segregation of frontend and backend by requiring that all implementations follow the same <a href='https://github.com/gothinkster/realworld/tree/master/api'>API specification</a>.</p><p>This leads to the benefit that you can freely exchange the frontend and backend implementations. But this segregation might not yield the optimal trade-offs for your small developer team trying to implement your current project in time and budget. Such a generic API has dozens of requirements, which are hard to solve (see <a href='https://maxweber.github.io/blog/2019-06-15-approaching-the-web-after-tomorrow-part-3'>Part 3 of the previous blog series</a>). Furthermore your API endpoint becomes more complex the more apps and systems use it, since all of them might need a slightly different set of database fields or functionality from your server.</p><blockquote><p> Developers know the benefits of everything and the trade-offs of   nothing. </p></blockquote><p>  Rich Hickey (<a href='https://youtu.be/rI8tNMsozo0?t=744'>source</a>)</p><p>The db-view approach choose different trade-offs in comparison to a REST API. In essence you decide to develop your backend API endpoint with a single frontend app in mind. All returned data is tailor-made for your particular frontend implementation. Instead of implementing a generic todo entries API endpoint, you return the data in a shape that is tailor-made for your todo list UI component. Thereby this shape can stay simple, since it doesn't have to satisfy and intertwine the requirements of multiple UI parts (or even different apps).</p><p>You only need a single API endpoint for the read-related (meaning no side-effects) part of app. Let's use the URL path <code>/db-view/get</code> for this API endpoint. It receives a map via the request body and returns a map in the response body. <a href='https://github.com/edn-format/edn'>EDN</a> is used as data format for the example below:</p><p><em>Example request body:</em><pre><code class="clojure">{:todo/list {}}
+</code></pre></p><p><em>Example response body:</em><pre><code class="clojure">{:todo/list {:todo/list-items
+             &#91;{:db/id 17592186045418
+               :todo/title &quot;Create an example&quot;
+               :todo/done true}
+              {:db/id 17592186045419
+               :todo/title &quot;Write a blog post&quot;
+               :todo/done false}
+              {:db/id 17592186045420
+               :todo/title &quot;Publish the blog post&quot;
+               :todo/done false}&#93;
+             :todo/active-count 2}
+ }
+</code></pre></p><p>The corresponding UI is the one of the <a href='http://todomvc.com/'>TodoMVC</a> examples and it looks like this:</p><p><img src="/img/todo-all.png" alt="todo-all" /></p><p>The request claims that server should return the <code>:todo/list</code> part of the db-view. The response contains the tailor-made data that is needed to render the todo list UI of your frontend. The <code>:todo/active-count</code> is used to display the number of todo entries, which are still not done.</p><p>To only show the todo entries that are already done, you send the request:</p><pre><code class="clojure">{:todo/list {:todo/filter :completed}}
+</code></pre><p>And receive the response:</p><pre><code class="clojure">{:todo/list {:todo/list-items
+             &#91;{:db/id 17592186045418
+               :todo/title &quot;Create an example&quot;
+               :todo/done true}&#93;
+             :todo/active-count 2}
+ }
+</code></pre><p>Again the response is tailor-made for the todo list UI that only shows the completed todo entries now:</p><p><img src="/img/todo-complete.png" alt="todo-completed" /></p><p>Note that the <code>:todo/active-count</code> ("2 items left") is still used in the bottom bar, that's why it is still included in the response. Most likely your app shows multiple UI parts at once. Let's say your app always displays the email address of the current user at the top of the page:</p><p><em>Example request:</em><pre><code class="clojure">{:todo/list {:todo/filter :completed}
+ :user/info {}}
+</code></pre></p><p><em>And the example response:</em></p><pre><code class="clojure">{:todo/list {:todo/list-items
+             &#91;{:db/id 17592186045418
+               :todo/title &quot;Create an example&quot;
+               :todo/done true}&#93;
+             :todo/active-count 2}
+ :user/info {:user/email &quot;max@example.com&quot;}
+ }
+</code></pre><p>Here the <code>:user/info</code> entry in the request tells the server to include the information of the current user in the response body. The <code>:user/info</code> entry in the response contains the <code>:user/email</code> to display it at the top of the page.</p><p>Let's pretend multiple people are using this todo app simultaneously. When a user adds a new todo entry, how do the other users receive the update. In the case of a "classic" web application the other users would need to hit the browser's refresh button to receive the latest state from the server that includes the new todo entry.</p><p>The db-view approach uses a similar mechanism, with the difference that the user do not have to press the refresh button, a kind of auto-refresh if you like. While a "classic" web application would transfer the arguments to the server via the query parameters of the URL, a db-view frontend stores these parameters in a map (JSON or EDN) and sends them via a POST request to the server. So to refresh our app with the latest state of the server, we just repeat this POST request with the same parameters as last time.</p><p>To receive the update with the new todo entry, the dumbest implementation would just poll the server every second. However normally you would use long-polling, websockets or server-sent events to send a signal to the client. This signal does not contain any payload, it just tells the client to do a refresh.</p><p>To avoid a full page refesh the frontend needs to use a virtual dom library (like React). The example for this blog post series uses <a href='https://github.com/reagent-project/reagent'>Reagent</a> (also React-based) to implement the UI. The complete frontend app state is held in a single (Reagent) <a href='https://clojuredocs.org/clojure.core/atom'>atom</a>. The input parameters for the db-view are stored under the key <code>:db-view/input</code> in the app state. This map is send as request body to the <code>/db-view/get</code> API endpoint, while the response body (also a map) is stored under the key <code>:db-view/output</code> in the app state. From there the UI components can access the data that has been retrieved from the server. As soon as the app state is updated Reagent will rerender the corresponding UI components and the user will see the most recent state.</p><p>In the <a href='https://elixir-lang.org/'>elixir</a> community a related approach called <a href='https://github.com/phoenixframework/phoenix_live_view'>Phoenix LiveView</a> is emerging that does even more on the server-side, since it also does a kind of virtual dom diffing on the server-side. The trade-off is that you can implement most of the app on the server-side, but you need to store the client state on the server and deal with the latency. Luckily Clojure has a good story for client-side development due to ClojureScript.  Therefore you can at least use the same programming language for the frontend and the backend. By doing more on the server-side Phoenix LiveView and db-view both reduce the number of pitfalls due to the fact that you can not trust the client, since an attacker can modify the client source code or send fake requests to your API.</p><p>More on that in the next blog posts, which will also provide a detailed look on the source code of the db-view example todo app. Furthermore we we will also learn how to implement side-effects in the context of a db-view application.</p>
+</div>
+
+<div id="post-tags">
+    <br/> 
+    <b>Tags: </b>
+    
+    <a href="/tags/Clojure">Clojure</a>
+    
+    <a href="/tags/ClojureScript">ClojureScript</a>
+    
+    <a href="/tags/db-view">db-view</a>
+    
+    <a href="/tags/Datomic">Datomic</a>
+    
+</div>
+
+<br/>
+
+    <div id="prev-next">
+        
+        
+        <a class="right button" href="/blog/2019-06-15-approaching-the-web-after-tomorrow-part-3">Approaching The Web After Tomorrow - Part 3 &raquo;</a>
+        
+    </div>
+
+    
+
+
+</div>
+
+<hr/>
+<div id="footercont" class="clearfix">Copyright &copy; 2019 Max Weber
+    <p>Powered by <a href="http://cryogenweb.org">Cryogen</a> | Free Website Template by <a title="free website templates" href="http://www.downloadwebsitetemplates.co.uk" rel="external">Download Website Templates</a></p>
+
+</div>
+</div>
+<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="/js/highlight.pack.js" type="text/javascript"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script src="/js/scripts.js" type="text/javascript"></script>
+
+
+</body>
+</html>

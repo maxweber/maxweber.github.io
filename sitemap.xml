@@ -5,7 +5,7 @@
 https://maxweber.github.io/tags.html
 </loc>
 <lastmod>
-2019-07-03
+2019-07-25
 </lastmod>
 </url>
 <url>
@@ -13,7 +13,7 @@ https://maxweber.github.io/tags.html
 https://maxweber.github.io/index.html
 </loc>
 <lastmod>
-2019-07-03
+2019-07-25
 </lastmod>
 </url>
 <url>
@@ -21,7 +21,7 @@ https://maxweber.github.io/index.html
 https://maxweber.github.io/authors/Max Weber.html
 </loc>
 <lastmod>
-2019-07-03
+2019-07-25
 </lastmod>
 </url>
 <url>
@@ -29,7 +29,7 @@ https://maxweber.github.io/authors/Max Weber.html
 https://maxweber.github.io/404.html
 </loc>
 <lastmod>
-2019-07-03
+2019-07-25
 </lastmod>
 </url>
 <url>
@@ -37,7 +37,7 @@ https://maxweber.github.io/404.html
 https://maxweber.github.io/blog/2019-06-04-approaching-the-web-after-tomorrow.html
 </loc>
 <lastmod>
-2019-07-03
+2019-07-25
 </lastmod>
 </url>
 <url>
@@ -45,7 +45,7 @@ https://maxweber.github.io/blog/2019-06-04-approaching-the-web-after-tomorrow.ht
 https://maxweber.github.io/blog/2019-06-08-approaching-the-web-after-tomorrow-part-2.html
 </loc>
 <lastmod>
-2019-07-03
+2019-07-25
 </lastmod>
 </url>
 <url>
@@ -53,7 +53,15 @@ https://maxweber.github.io/blog/2019-06-08-approaching-the-web-after-tomorrow-pa
 https://maxweber.github.io/blog/2019-06-15-approaching-the-web-after-tomorrow-part-3.html
 </loc>
 <lastmod>
-2019-07-03
+2019-07-25
+</lastmod>
+</url>
+<url>
+<loc>
+https://maxweber.github.io/blog/2019-07-25-introducing-db-view-part-1.html
+</loc>
+<lastmod>
+2019-07-25
 </lastmod>
 </url>
 <url>
@@ -61,7 +69,7 @@ https://maxweber.github.io/blog/2019-06-15-approaching-the-web-after-tomorrow-pa
 https://maxweber.github.io/tags/db-view.html
 </loc>
 <lastmod>
-2019-07-03
+2019-07-25
 </lastmod>
 </url>
 <url>
@@ -69,7 +77,7 @@ https://maxweber.github.io/tags/db-view.html
 https://maxweber.github.io/tags/ClojureScript.html
 </loc>
 <lastmod>
-2019-07-03
+2019-07-25
 </lastmod>
 </url>
 <url>
@@ -77,7 +85,7 @@ https://maxweber.github.io/tags/ClojureScript.html
 https://maxweber.github.io/tags/Clojure.html
 </loc>
 <lastmod>
-2019-07-03
+2019-07-25
 </lastmod>
 </url>
 <url>
@@ -85,7 +93,7 @@ https://maxweber.github.io/tags/Clojure.html
 https://maxweber.github.io/tags/Datomic.html
 </loc>
 <lastmod>
-2019-07-03
+2019-07-25
 </lastmod>
 </url>
 <url>
@@ -93,7 +101,7 @@ https://maxweber.github.io/tags/Datomic.html
 https://maxweber.github.io/archives.html
 </loc>
 <lastmod>
-2019-07-03
+2019-07-25
 </lastmod>
 </url>
 <url>
@@ -101,7 +109,7 @@ https://maxweber.github.io/archives.html
 https://maxweber.github.io/pages/about.html
 </loc>
 <lastmod>
-2019-07-03
+2019-07-25
 </lastmod>
 </url>
 </urlset>
