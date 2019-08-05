@@ -1,4 +1,237 @@
-<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><atom:link href="https://maxweber.github.io/" rel="self" type="application/rss+xml"/><title>The blog of Max Weber</title><link>https://maxweber.github.io/</link><description>A blog about software and business development</description><lastBuildDate>Fri, 26 Jul 2019 12:41:49 +0200</lastBuildDate><generator>clj-rss</generator><item><guid>https://maxweber.github.io/blog/2019-07-25-introducing-db-view-part-1</guid><link>https://maxweber.github.io/blog/2019-07-25-introducing-db-view-part-1</link><title>Introducing db-view - Part 1</title><description>&lt;p&gt;In my previous blog post series &lt;a href='https://maxweber.github.io/blog/2019-06-04-approaching-the-web-after-tomorrow'&gt;Approaching The Web After Tomorrow&lt;/a&gt; I've talked about how I tried to implement the idea that &lt;a href='https://twitter.com/nikitonsky'&gt;Nikita&lt;/a&gt; described in his blog post called &lt;a href='https://tonsky.me/blog/the-web-after-tomorrow/'&gt;The Web After Tomorrow&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;In &lt;a href='https://maxweber.github.io/blog/2019-06-04-approaching-the-web-after-tomorrow'&gt;part 1 of Approaching The Web After Tomorrow&lt;/a&gt; I talked about how we used DataScript, Datomic and Clojure(Script) to build a real-time app for our SaaS product &lt;a href='https://www.storrito.com'&gt;Storrito.com&lt;/a&gt; and what performance challenge the first implementation yielded. &lt;a href='https://maxweber.github.io/blog/2019-06-08-approaching-the-web-after-tomorrow-part-2'&gt;Part 2&lt;/a&gt; was about some ideas I had to solve this performance challenge. Finally &lt;a href='https://maxweber.github.io/blog/2019-06-15-approaching-the-web-after-tomorrow-part-3'&gt;Part 3&lt;/a&gt; was about what difficulties you can avoid by creating your API for exclusively one frontend app and that big organizations tends to separate developers into frontend and backend developer teams.&lt;/p&gt;&lt;p&gt;For this blog post series I've prepared an example to introduce you to an approach I named "db-view". During my search for a good example use case, I noticed again the deep division that splits our industry into frontend and backend software development. You probably all know the de-facto standard example of almost every frontend framework: the &lt;a href='http://todomvc.com/'&gt;TodoMVC&lt;/a&gt;, an app to manage todo entries. New to me was that there is also a collection of example backend implementations for this todo app: &lt;a href='https://www.todobackend.com/'&gt;todobackend.com&lt;/a&gt;. Interestingly enough it is hard to find examples that implements both, the frontend and the backend. This is also the case for another popular collection of examples: &lt;a href='https://realworld.io/'&gt;realworld.io&lt;/a&gt; or how they call it "the mother of all demo apps", an exemplary fullstack clone of &lt;a href='https://medium.com/'&gt;Medium.com&lt;/a&gt;. This project even enforces the segregation of the frontend and the backend by requiring that all implementations follow the same &lt;a href='https://github.com/gothinkster/realworld/tree/master/api'&gt;API specification&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;This leads to the benefit that you can freely exchange the frontend and the backend implementations. But this segregation might not yield the optimal trade-offs for your small developer team, that tries to implement your current project in time and budget. Such a generic API has dozens of requirements, which are hard to solve (see &lt;a href='https://maxweber.github.io/blog/2019-06-15-approaching-the-web-after-tomorrow-part-3'&gt;Part 3 of the previous blog series&lt;/a&gt;). Furthermore your API endpoint becomes more complex the more apps and systems use it, since all of them might need a slightly different set of database fields or functionality from your server.&lt;/p&gt;&lt;blockquote&gt;&lt;p&gt; Developers know the benefits of everything and the trade-offs of   nothing. &lt;/p&gt;&lt;/blockquote&gt;&lt;p&gt;  Rich Hickey (&lt;a href='https://youtu.be/rI8tNMsozo0?t=744'&gt;source&lt;/a&gt;)&lt;/p&gt;&lt;p&gt;The db-view approach choose different trade-offs in comparison to a REST API. In essence you decide to develop your backend API endpoint with a single frontend app in mind. All returned data is tailor-made for your particular frontend implementation. Instead of implementing a generic todo entries API endpoint, you return the data in a shape that is designed specifically for your todo list UI component. Thereby this shape can stay simple, since it doesn't have to satisfy and intertwine the requirements of multiple UI parts (or different apps).&lt;/p&gt;&lt;p&gt;You only need a single API endpoint for the read-related (meaning no side-effects) part of app. Let's use the URL path &lt;code&gt;/db-view/get&lt;/code&gt; for this API endpoint. It receives a map via the request body and returns a map in the response body. &lt;a href='https://github.com/edn-format/edn'&gt;EDN&lt;/a&gt; is used as data format for the example below:&lt;/p&gt;&lt;p&gt;&lt;em&gt;Example request body:&lt;/em&gt;&lt;pre&gt;&lt;code class="clojure"&gt;{:todo/list {}}
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><atom:link href="https://maxweber.github.io/" rel="self" type="application/rss+xml"/><title>The blog of Max Weber</title><link>https://maxweber.github.io/</link><description>A blog about software and business development</description><lastBuildDate>Mon, 05 Aug 2019 10:40:06 +0200</lastBuildDate><generator>clj-rss</generator><item><guid>https://maxweber.github.io/blog/2019-08-05-introducing-db-view-part-2</guid><link>https://maxweber.github.io/blog/2019-08-05-introducing-db-view-part-2</link><title>Introducing db-view - Part 2</title><description>&lt;p&gt;In &lt;a href='https://maxweber.github.io/blog/2019-07-25-introducing-db-view-part-1'&gt;part 1&lt;/a&gt; I've talked about the db-view approach that has different trade-offs in comparison to a REST API. In essence you decide to develop your backend API endpoint with a single frontend app in mind. Thereby your API endpoint and frontend tends to stay &lt;a href='https://www.infoq.com/presentations/Simple-Made-Easy/'&gt;simple&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;This part is about the example app that I've developed for this blog post series. It implements the well-known &lt;a href='http://todomvc.com/'&gt;TodoMVC&lt;/a&gt; example, an app to manage todo items. In comparison to many other TodoMVC implementations out there, it implements the frontend and the backend. It is a core principle of the db-view approach that you design your API exclusively for one frontend app, instead of providing a more generic API. The latter one introduces &lt;a href='https://maxweber.github.io/blog/2019-06-15-approaching-the-web-after-tomorrow-part-3'&gt;various complexities&lt;/a&gt; which needs to be solved, despite the fact that they are not strictly required for your app.&lt;/p&gt;&lt;p&gt;The source code for the example app can be found here:&lt;/p&gt;&lt;p&gt;&lt;a href='https://github.com/maxweber/todomvc-db-view'&gt;https://github.com/maxweber/todomvc-db-view&lt;/a&gt;&lt;/p&gt;&lt;p&gt;It uses Clojure for the backend and ClojureScript for the frontend. The &lt;a href='https://leiningen.org/'&gt;Leiningen&lt;/a&gt; build tool is used for the Clojure part, while &lt;a href='https://github.com/thheller/shadow-cljs'&gt;shadow-cljs&lt;/a&gt; is used for the frontend. The example &lt;a href='https://github.com/maxweber/todomvc-db-view/blob/master/README.md'&gt;README&lt;/a&gt; describes how to start the app and the required tools.&lt;/p&gt;&lt;p&gt;The API endpoint &lt;code&gt;/db-view/get&lt;/code&gt; is used to receive the &lt;code&gt;:db-view/output&lt;/code&gt; map from the server. This is the corresponding frontend code:&lt;/p&gt;&lt;pre&gt;&lt;code class="clojure"&gt;&amp;#40;ns todomvc-db-view.db-view.get
+  &amp;#40;:require &amp;#91;cljs.core.async :as a&amp;#93;
+            &amp;#91;cljs-http.client :as http&amp;#93;
+            &amp;#91;todomvc-db-view.state.core :as state&amp;#93;&amp;#41;
+  &amp;#40;:require-macros &amp;#91;cljs.core.async.macros :refer &amp;#91;go&amp;#93;&amp;#93;&amp;#41;&amp;#41;
+
+;; Concept:
+;;
+;; Gets and refreshes the db-view from the server. Provides the server
+;; API endpoint '/db-view/get' with the `:db-view/input` map from the
+;; app state. Receives the `:db-view/output` map in the API response
+;; and stores it in the app state. Reagent will trigger a rerender of
+;; all UI components which depend on changed parts of the
+;; `:db-view/output`.
+
+&amp;#40;defn get-view
+  &amp;quot;Provides the server API endpoint '/db-view/get' with the
+   `:db-view/input` map from the app state and returns the API response
+   that contains the `:db-view/output` map.&amp;quot;
+  &amp;#91;state-value&amp;#93;
+  &amp;#40;go
+    &amp;#40;let &amp;#91;response &amp;#40;&amp;lt;! &amp;#40;http/request
+                        {:request-method :post
+                         :url &amp;quot;/db-view/get&amp;quot;
+                         ;; NOTE: for a production app add
+                         ;;       authorization here and prefer the
+                         ;;       Transit format:
+                         :edn-params &amp;#40;:db-view/input state-value&amp;#41;}&amp;#41;&amp;#41;&amp;#93;
+      &amp;#40;:body response&amp;#41;&amp;#41;&amp;#41;&amp;#41;
+
+&amp;#40;defn refresh!
+  &amp;quot;Provides the server API endpoint '/db-view/get' with the
+   `:db-view/input` map from the app state, receives the
+   `:db-view/output` map from the API response and stores it in the app
+   state.&amp;quot;
+  &amp;#91;&amp;#93;
+  &amp;#40;go
+    &amp;#40;:db-view/output
+     &amp;#40;swap! state/state
+            assoc
+            :db-view/output
+            &amp;#40;&amp;lt;! &amp;#40;get-view @state/state&amp;#41;&amp;#41;&amp;#41;&amp;#41;&amp;#41;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;In the recent years I tend to use a light form of &lt;a href='https://en.wikipedia.org/wiki/Literate_programming'&gt;Literate programming&lt;/a&gt;, where you provide more explanation of the logic in a natural language. Therefore you find the explanation of the source code in the 'Concept' header, the comments and the doc-strings of the functions above.&lt;/p&gt;&lt;p&gt;The app state is hold in a &lt;a href='https://github.com/reagent-project/reagent'&gt;Reagent&lt;/a&gt; atom:&lt;/p&gt;&lt;pre&gt;&lt;code class="clojure"&gt;&amp;#40;ns todomvc-db-view.state.core
+  &amp;#40;:require &amp;#91;reagent.core :as r&amp;#93;&amp;#41;&amp;#41;
+
+;; Concept:
+;;
+;; Namespace with the Reagent atom `state` that holds the global app
+;; state of this ClojureScript app.
+
+&amp;#40;def initial-state-value
+  {:db-view/input {:todo/list {}}}&amp;#41;
+
+&amp;#40;defonce state
+  &amp;#40;r/atom initial-state-value&amp;#41;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The counterpart for the &lt;code&gt;/db-view/get&lt;/code&gt; API endpoint on the server-side looks like this:&lt;/p&gt;&lt;pre&gt;&lt;code class="clojure"&gt;&amp;#40;ns todomvc-db-view.db-view.get
+  &amp;#40;:require &amp;#91;datomic.api :as d&amp;#93;
+            &amp;#91;todomvc-db-view.util.edn :as edn&amp;#93;
+            &amp;#91;todomvc-db-view.db-view.todo-list :as todo-list&amp;#93;
+            &amp;#91;todomvc-db-view.db-view.todo-edit :as todo-edit&amp;#93;
+            &amp;#91;todomvc-db-view.db-view.todo-new :as todo-new&amp;#93;&amp;#41;&amp;#41;
+
+;; Concept:
+;;
+;; Provides the API endpoint to get the db-view. The request body
+;; contains the parameters to query the database to assemble the
+;; `:db-view/output` map, that contains the required data for the
+;; current active UI parts. This value is returned in the response
+;; body and the client stores it in the Reagent app state atom, where
+;; the UI components can access it.
+
+&amp;#40;defn get-view
+  &amp;quot;Main entry point to gather the `:db-view/output` map for the
+   client. Based on the given Datomic database value `db` and the
+   `:db-view/input` map from the client.&amp;quot;
+  &amp;#91;db db-view-input&amp;#93;
+  &amp;#40;merge
+   &amp;#40;todo-list/get-view db
+                       db-view-input&amp;#41;
+   &amp;#40;todo-edit/get-view db
+                       db-view-input&amp;#41;
+   &amp;#40;todo-new/get-view db
+                      db-view-input&amp;#41;
+   ;; NOTE: add other db-view parts here.
+   &amp;#41;&amp;#41;
+
+&amp;#40;defn ring-handler
+  &amp;quot;Ring handler to get the `:db-view/output` map for the given
+   `:db-view/input` map in the `request` body.&amp;quot;
+  &amp;#91;db request&amp;#93;
+  &amp;#40;when &amp;#40;and &amp;#40;= &amp;#40;:request-method request&amp;#41; :post&amp;#41;
+             &amp;#40;= &amp;#40;:uri request&amp;#41; &amp;quot;/db-view/get&amp;quot;&amp;#41;&amp;#41;
+    ;; NOTE: for a production app rather use
+    ;;       &amp;#91;Transit&amp;#93;&amp;#40;https://github.com/cognitect/transit-format&amp;#41;
+    ;;       here instead of EDN:
+    &amp;#40;let &amp;#91;db-view-input &amp;#40;edn/read-string &amp;#40;slurp &amp;#40;:body request&amp;#41;&amp;#41;&amp;#41;&amp;#93;
+      ;; NOTE: for a production app do the appropriate authorization
+      ;;       checks:
+      &amp;#40;edn/response
+       &amp;#40;get-view db
+                 db-view-input&amp;#41;&amp;#41;&amp;#41;&amp;#41;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;I already included the commands into the example app, which are used to perform side-effects like adding a new todo-item. Commands will be explained in detail in the next blog post. Now let's have a look at the namespace that contains the db-view implementation for the todo list UI:&lt;/p&gt;&lt;pre&gt;&lt;code class="clojure"&gt;&amp;#40;ns todomvc-db-view.db-view.todo-list
+  &amp;#40;:require &amp;#91;datomic.api :as d&amp;#93;&amp;#41;&amp;#41;
+
+;; Concept:
+;;
+;; The db-view part for the todo list UI.
+
+&amp;#40;defn q-all
+  &amp;quot;Queries all todo-item entities and pulls the attributes which are
+   required for todo list UI.&amp;quot;
+  &amp;#91;db&amp;#93;
+  &amp;#40;d/q
+   '&amp;#91;:find
+     &amp;#91;&amp;#40;pull ?e
+            &amp;#91;:db/id :todo/title :todo/done&amp;#93;&amp;#41; ...&amp;#93;
+     :where
+     &amp;#91;?e :todo/title&amp;#93;&amp;#93;
+   db&amp;#41;&amp;#41;
+
+&amp;#40;defn get-view
+  &amp;quot;Returns the db-view for the todo list UI.&amp;quot;
+  &amp;#91;db db-view-input&amp;#93;
+  &amp;#40;when-let &amp;#91;params &amp;#40;:todo/list db-view-input&amp;#41;&amp;#93;
+    &amp;#40;let &amp;#91;all &amp;#40;q-all db&amp;#41;
+          {:keys &amp;#91;active completed&amp;#93;} &amp;#40;group-by &amp;#40;fn &amp;#91;todo-item&amp;#93;
+                                                 &amp;#40;if &amp;#40;:todo/done todo-item&amp;#41;
+                                                   :completed
+                                                   :active&amp;#41;&amp;#41;
+                                               all&amp;#41;
+          todo-items &amp;#40;case &amp;#40;:todo/filter params&amp;#41;
+                       :active
+                       active
+                       :completed
+                       completed
+                       all&amp;#41;&amp;#93;
+      {:todo/list {:todo/list-items todo-items
+                   :todo/active-count &amp;#40;count active&amp;#41;
+                   :todo/completed-count &amp;#40;count completed&amp;#41;}}&amp;#41;&amp;#41;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;In the code above I removed the command-related parts for the purpose of this blog post, but you can already find it in the &lt;a href='https://github.com/maxweber/todomvc-db-view/blob/master/src/clj/todomvc_db_view/db_view/todo_list.clj'&gt;Github repo&lt;/a&gt;. Altogether the code is really straightforward:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;it runs a Datomic query that gets all todo-items with the attributes  required for the todo list UI&lt;/li&gt;&lt;li&gt;groups the query results into active and completed todo-items&lt;/li&gt;&lt;li&gt;returns the group that was requested via the &lt;code&gt;:todo/filter&lt;/code&gt; parameter as &lt;code&gt;:todo/list-items&lt;/code&gt;&lt;/li&gt;&lt;li&gt;counts the active and completed todo-items (this information is used  in the bottom bar of the todo list UI)&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;The notify part of the app enables the real-time or rather auto-update behaviour of the example app. To try it out, just open the example app in two browser windows, then you see that changes in one window also get replicated in the other window. On the client side the code looks like this:&lt;/p&gt;&lt;pre&gt;&lt;code class="clojure"&gt;&amp;#40;ns todomvc-db-view.db-view.notify
+  &amp;#40;:require &amp;#91;cljs-http.client :as http&amp;#93;
+            &amp;#91;todomvc-db-view.db-view.get :as get&amp;#93;
+            &amp;#91;cljs.core.async :as a&amp;#93;&amp;#41;
+  &amp;#40;:require-macros &amp;#91;cljs.core.async.macros :refer &amp;#91;go-loop&amp;#93;&amp;#93;&amp;#41;&amp;#41;
+
+;; Concept:
+;;
+;; Listens for changes in the Datomic transaction log, which affect
+;; the current logged-in user. Uses HTTP long polling to allow the API
+;; endpoint on the server to push a message. The server will notify
+;; the client everytime, when a transaction contains something
+;; relevant for the current logged-in user.
+;;
+;; Due to this mechanism the client can show updates, which were issued
+;; by the server &amp;#40;a finished background job for example or a change by
+;; another user&amp;#41;.
+
+&amp;#40;defn start-listening
+  &amp;quot;Starts a go-loop that opens a long-polling request to the
+   '/db-view/notify' API endpoint. Refreshes the `:db-view/output` map
+   in the app state, when it receives a HTTP 200 response. Sleeps for a
+   short moment, when it receives an error response to not DDoS the
+   server in the case of a server issue.&amp;quot;
+  &amp;#91;&amp;#93;
+  &amp;#40;go-loop &amp;#91;&amp;#93;
+    &amp;#40;let &amp;#91;response &amp;#40;&amp;lt;! &amp;#40;http/request
+                         {:request-method :post
+                          :url &amp;quot;/db-view/notify&amp;quot;}&amp;#41;&amp;#41;&amp;#93;
+      &amp;#40;if &amp;#40;= &amp;#40;:status response&amp;#41;
+             200&amp;#41;
+        &amp;#40;&amp;lt;! &amp;#40;get/refresh!&amp;#41;&amp;#41;
+        &amp;#40;&amp;lt;! &amp;#40;a/timeout 2000&amp;#41;&amp;#41;&amp;#41;
+      &amp;#40;recur&amp;#41;&amp;#41;&amp;#41;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The server counterpart looks like this:&lt;/p&gt;&lt;pre&gt;&lt;code class="clojure"&gt;&amp;#40;ns todomvc-db-view.db-view.notify
+  &amp;#40;:require &amp;#91;org.httpkit.server :as httpkit&amp;#93;
+            &amp;#91;datomic.api :as d&amp;#93;
+            &amp;#91;todomvc-db-view.util.edn :as edn&amp;#93;&amp;#41;&amp;#41;
+
+;; Concept:
+;;
+;; Provides an API endpoint that allows clients to listen for changes
+;; in the Datomic transaction log, which affect their current
+;; logged-in user.
+;;
+;; Thereby the client can refresh the `:db-view/output` map as soon as
+;; it is notified by this API endpoint. HTTP long polling is used here
+;; to allow the server to push a message to the client. It is less
+;; complex to implement in comparison to WebSockets. Furthermore the
+;; low latency and reduced payload size of WebSockets is not required
+;; for this use case.
+
+&amp;#40;defonce client-listeners-state
+  ;; holds the httpkit channels of the clients, which are waiting for
+  ;; a db-view notify:
+  &amp;#40;atom {}&amp;#41;&amp;#41;
+
+&amp;#40;defn ring-handler
+  &amp;quot;Ring-handler for the '/db-view/notify' API endpoint.&amp;quot;
+  &amp;#91;request&amp;#93;
+  &amp;#40;when &amp;#40;and &amp;#40;= &amp;#40;:request-method request&amp;#41; :post&amp;#41;
+             &amp;#40;= &amp;#40;:uri request&amp;#41; &amp;quot;/db-view/notify&amp;quot;&amp;#41;&amp;#41;
+    ;; NOTE: for a production app add an authentication check here:
+    &amp;#40;httpkit/with-channel request channel
+      ;; register the user's browser session in the
+      ;; `client-listeners-state`:
+      &amp;#40;swap! client-listeners-state
+             assoc
+             channel
+             channel&amp;#41;
+      &amp;#40;httpkit/on-close channel
+                        &amp;#40;fn &amp;#91;status&amp;#93;
+                          ;; remove the user's browser session from
+                          ;; the `client-listeners-state` as soon as
+                          ;; the channel is closed, meaning the user
+                          ;; has closed the browser tab or the network
+                          ;; connection was interrupted:
+                          &amp;#40;swap! client-listeners-state
+                                 dissoc
+                                 channel&amp;#41;&amp;#41;&amp;#41;&amp;#41;&amp;#41;&amp;#41;
+
+&amp;#40;defn notify
+  &amp;quot;A Datomic transaction listener that notifies all user browser
+   sessions, where the user was affected by the transaction of the
+   `tx-report`.&amp;quot;
+  &amp;#91;tx-report&amp;#93;
+  &amp;#40;let &amp;#91;basis-t &amp;#40;d/basis-t &amp;#40;:db-after tx-report&amp;#41;&amp;#41;
+        response &amp;#40;edn/response
+                  {:db/basis-t basis-t}&amp;#41;&amp;#93;
+    ;; NOTE: for a production app only send notifications to the users
+    ;;       which are affected by this `tx-report`:
+    &amp;#40;doseq &amp;#91;channel &amp;#40;vals @client-listeners-state&amp;#41;&amp;#93;
+      &amp;#40;httpkit/send! channel
+                     response&amp;#41;&amp;#41;&amp;#41;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;As already mentioned in the note above you would normally only notify the connected users (client-listeners) which are affected by the current Datomic transaction report. For example if your app supports teams and one user makes a change on the team's todo list, only the team mates which are currently online would be notified.&lt;/p&gt;&lt;p&gt;Datomic has this great feature that you can access the transaction log and even receive push updates of new transactions via the &lt;a href='https://docs.datomic.com/on-prem/clojure/index.html#datomic.api/tx-report-queue'&gt;&lt;code&gt;datomic.api/tx-report-queue&lt;/code&gt;&lt;/a&gt;. Most likely you will have multiple web servers, which response to db-view requests and executes commands (which transacts Datomic transactions). With the help of Datomic's transaction queue it does not matter to which server the client has opened the long-polling HTTP request, since all servers will be informed of the new transaction and initiate the necessary notification for an affected user.&lt;/p&gt;&lt;p&gt;The db-view approach also works for other databases than Datomic. But most of them do not provide access to a transaction queue. A do-it-yourself alternative to push the notifications is an effort that should not be underestimated. Therefore I would recommend services like &lt;a href='https://pusher.com/'&gt;Pusher&lt;/a&gt; or &lt;a href='https://www.pubnub.com/'&gt;Pubnub&lt;/a&gt;, where you can push messages to the user's web browser, without building the required infrastructure yourself. The server would then send the notifications to the affected users right after it has transacted the corresponding Datomic transaction.&lt;/p&gt;&lt;p&gt;As already mentioned, the next blog post will cover the concept of commands in the context of a db-view application.&lt;/p&gt;</description><pubDate>Mon, 05 Aug 2019 00:00:00 +0200</pubDate></item><item><guid>https://maxweber.github.io/blog/2019-07-25-introducing-db-view-part-1</guid><link>https://maxweber.github.io/blog/2019-07-25-introducing-db-view-part-1</link><title>Introducing db-view - Part 1</title><description>&lt;p&gt;In my previous blog post series &lt;a href='https://maxweber.github.io/blog/2019-06-04-approaching-the-web-after-tomorrow'&gt;Approaching The Web After Tomorrow&lt;/a&gt; I've talked about how I tried to implement the idea that &lt;a href='https://twitter.com/nikitonsky'&gt;Nikita&lt;/a&gt; described in his blog post called &lt;a href='https://tonsky.me/blog/the-web-after-tomorrow/'&gt;The Web After Tomorrow&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;In &lt;a href='https://maxweber.github.io/blog/2019-06-04-approaching-the-web-after-tomorrow'&gt;part 1 of Approaching The Web After Tomorrow&lt;/a&gt; I talked about how we used DataScript, Datomic and Clojure(Script) to build a real-time app for our SaaS product &lt;a href='https://www.storrito.com'&gt;Storrito.com&lt;/a&gt; and what performance challenge the first implementation yielded. &lt;a href='https://maxweber.github.io/blog/2019-06-08-approaching-the-web-after-tomorrow-part-2'&gt;Part 2&lt;/a&gt; was about some ideas I had to solve this performance challenge. Finally &lt;a href='https://maxweber.github.io/blog/2019-06-15-approaching-the-web-after-tomorrow-part-3'&gt;Part 3&lt;/a&gt; was about what difficulties you can avoid by creating your API for exclusively one frontend app and that big organizations tends to separate developers into frontend and backend developer teams.&lt;/p&gt;&lt;p&gt;For this blog post series I've prepared an example to introduce you to an approach I named "db-view". During my search for a good example use case, I noticed again the deep division that splits our industry into frontend and backend software development. You probably all know the de-facto standard example of almost every frontend framework: the &lt;a href='http://todomvc.com/'&gt;TodoMVC&lt;/a&gt;, an app to manage todo entries. New to me was that there is also a collection of example backend implementations for this todo app: &lt;a href='https://www.todobackend.com/'&gt;todobackend.com&lt;/a&gt;. Interestingly enough it is hard to find examples that implements both, the frontend and the backend. This is also the case for another popular collection of examples: &lt;a href='https://realworld.io/'&gt;realworld.io&lt;/a&gt; or how they call it "the mother of all demo apps", an exemplary fullstack clone of &lt;a href='https://medium.com/'&gt;Medium.com&lt;/a&gt;. This project even enforces the segregation of the frontend and the backend by requiring that all implementations follow the same &lt;a href='https://github.com/gothinkster/realworld/tree/master/api'&gt;API specification&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;This leads to the benefit that you can freely exchange the frontend and the backend implementations. But this segregation might not yield the optimal trade-offs for your small developer team, that tries to implement your current project in time and budget. Such a generic API has dozens of requirements, which are hard to solve (see &lt;a href='https://maxweber.github.io/blog/2019-06-15-approaching-the-web-after-tomorrow-part-3'&gt;Part 3 of the previous blog series&lt;/a&gt;). Furthermore your API endpoint becomes more complex the more apps and systems use it, since all of them might need a slightly different set of database fields or functionality from your server.&lt;/p&gt;&lt;blockquote&gt;&lt;p&gt; Developers know the benefits of everything and the trade-offs of   nothing. &lt;/p&gt;&lt;/blockquote&gt;&lt;p&gt;  Rich Hickey (&lt;a href='https://youtu.be/rI8tNMsozo0?t=744'&gt;source&lt;/a&gt;)&lt;/p&gt;&lt;p&gt;The db-view approach choose different trade-offs in comparison to a REST API. In essence you decide to develop your backend API endpoint with a single frontend app in mind. All returned data is tailor-made for your particular frontend implementation. Instead of implementing a generic todo entries API endpoint, you return the data in a shape that is designed specifically for your todo list UI component. Thereby this shape can stay simple, since it doesn't have to satisfy and intertwine the requirements of multiple UI parts (or different apps).&lt;/p&gt;&lt;p&gt;You only need a single API endpoint for the read-related (meaning no side-effects) part of app. Let's use the URL path &lt;code&gt;/db-view/get&lt;/code&gt; for this API endpoint. It receives a map via the request body and returns a map in the response body. &lt;a href='https://github.com/edn-format/edn'&gt;EDN&lt;/a&gt; is used as data format for the example below:&lt;/p&gt;&lt;p&gt;&lt;em&gt;Example request body:&lt;/em&gt;&lt;pre&gt;&lt;code class="clojure"&gt;{:todo/list {}}
 &lt;/code&gt;&lt;/pre&gt;&lt;/p&gt;&lt;p&gt;&lt;em&gt;Example response body:&lt;/em&gt;&lt;pre&gt;&lt;code class="clojure"&gt;{:todo/list {:todo/list-items
              &amp;#91;{:db/id 17592186045418
                :todo/title &amp;quot;Create an example&amp;quot;
