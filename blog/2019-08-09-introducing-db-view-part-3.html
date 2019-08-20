@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"><![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"><![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"><![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!--><html lang="en"><!--<![endif]-->
+<head>
+    <!-- Website Template designed by www.downloadwebsitetemplates.co.uk -->
+    <!-- Modified to fit Cryogen.-->
+    <meta charset="UTF-8">
+    <title>The blog of Max Weber: Introducing db-view - Part 3</title>
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="images/ico/apple-touch-icon-144.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="images/ico/apple-touch-icon-114.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="images/ico/apple-touch-icon-72.png">
+    <link rel="apple-touch-icon-precomposed" href="images/ico/apple-touch-icon-57.png">
+    <link rel="shortcut icon" href="images/ico/favicon.png">
+    <!--[if IE]><![endif]-->
+    <link href="/css/buttons.css" rel="stylesheet" type="text/css" />
+    <link href="/css/menu.css" rel="stylesheet" type="text/css" />
+    <link href="/css/reset.css" rel="stylesheet" type="text/css" />
+    <link href="/css/style.css" rel="stylesheet" type="text/css" />
+    <link href="/css/typography.css" rel="stylesheet" type="text/css" />
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/styles/tomorrow-night-eighties.min.css">
+    <!--[if lt IE 9]><script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+</head>
+<body>
+
+<div id="left">
+
+    <p id="logo">
+        <a title="The blog of Max Weber" href="/">
+          <img src="/img/profile.jpg"></img>
+          <span class="text">Max Weber</span>
+        </a>
+    </p>
+
+    <div id="menucont" class="bodycontainer clearfix">
+        <div class="menutitle">
+            <p><span class="fa fa-reorder"></span><strong>Menu</strong></p>
+        </div>
+        <ul class="menu">
+            <li ><a title="Home" href="/">Home</a></li>
+            <li ><a title="Archives" href="/archives">Archives</a></li>
+            
+            <li >
+                <a href="/pages/about">About</a>
+            </li>
+            
+            <li><a title="RSS" href="/feed.xml">RSS</a></li>
+        </ul>
+    </div>
+
+    <div id="socialmedia" class="clearfix">
+        <ul>
+            <li><a title="GitHub" href="https://github.com/maxweber/" rel="external"><span class="fa fa-github"></span></a></li>
+            <li><a title="Twitter" href="https://twitter.com/webermaximilian" rel="external"><span class="fa fa-twitter"></span></a></li>
+        </ul>
+    </div>
+
+</div>
+
+<div id="right" class="clearfix">
+    
+<div id="post">
+    <div class="post-header">
+    <div id="post-meta" class="row">
+        <strong>9. August 2019</strong>
+        
+    </div>
+    <h1>Introducing db-view - Part 3</h1>
+</div>
+<div>
+    
+    <p><a href='https://maxweber.github.io/blog/2019-07-25-introducing-db-view-part-1'>part 1</a> of this blog post series introduced the db-view approach and discussed its trade-offs. <a href='https://maxweber.github.io/blog/2019-08-05-introducing-db-view-part-2'>part 2</a> showed a <a href='https://github.com/maxweber/todomvc-db-view'>TodoMVC example app</a> that uses the db-view approach. This part explains how to do side effects in a db-view application.</p><p>Side effects are a necessary evil within most applications. The todo app discussed in <a href='https://maxweber.github.io/blog/2019-08-05-introducing-db-view-part-2'>part 2</a> would be pretty useless without side effects, like marking a todo as done or creating a new one. Functional programming tries to push these side effects to the "edges of the system", meaning it tries to maximize the percentage of side-effect-free (pure) functions. <a href='https://www.datomic.com/'>Datomic</a> takes this to a whole nother level by applying this principle to create a database system that only needs one stateful <a href='https://www.infoq.com/presentations/Value-Values/'>place</a>.</p><p>The first iteration of the db-view approach used the common way to perform side effects within a web application, it sends a HTTP post to the corresponding API endpoint. This one either performs the side effect (like doing a database transaction) or returns a response with a validation error. The 'either ... or' in the previous sentence already indicates that this API endpoint does two things. Therefore it is not as <a href='https://www.infoq.com/presentations/Simple-Made-Easy/'>simple</a> as it could be. I took it apart by moving the validation into the side-effect-free part of the application. The result was the command concept of the db-view approach that is discussed below.</p><p>The concept of "commands" is nothing new, it is often used in the context of <a href='https://martinfowler.com/eaaDev/EventSourcing.html'>event sourcing</a> and <a href='https://martinfowler.com/bliki/CQRS.html'>CQRS</a>.</p><blockquote><p> CQRS stands for <strong>Command Query Responsibility Segregation</strong>. It's a   pattern that I first heard described by <a href='https://twitter.com/gregyoung'>Greg Young</a>.   At its heart is the notion that you can use a different model to update information   than the model you use to read information. </p></blockquote><p><a href='https://martinfowler.com/bliki/CQRS.html'>Martin Fowler</a></p><p>A command that marks a todo as done looks like this:</p><pre><code class="clojure">{:command/type :todo/done!
+ :db/id 17592186045419}
+</code></pre><p>The server encrypts this command map before returning it as part of the db-view output:</p><pre><code class="clojure">{:todo/list
+ {:todo/list-items
+  &#91;{:db/id 17592186045419,
+    :todo/title &quot;Write a blog post&quot;,
+    :todo/done! &quot;g7RWatF6ldi0Xm6LT/vxhiHIKpw+UzF/OU/iVQDmu0zyTDmRZe7ZdIMPBS2YKVooSivGx6+K9xiHgMa7imqibD1RqFoqFrv+X8TEq0YQUlPJcYjSwiN9DTOUZwrOtPX3Veum8OPUljte/5Eu7924aQrJN2mEI2kfG1DF8eGOOqw=&quot;
+    }&#93;
+ }
+}
+</code></pre><p>The frontend can send this encrypted command to the '/command' API endpoint to perform the side effect. Through the encryption the server can ensure that the frontend cannot manipulate the command map (assuming the encryption is safe). Thereby most validations can be done in advance, when the command map is created. Even if a command like <code>:todo/done!</code> has no user input, the server can validate, if the current user is allowed to perform this command. You could for example share your todo list with a colleague as read-only version. The server can ensure that this colleague cannot mark your todos as done, simply by not including the encrypted <code>:todo/done!</code> command in the db-view output. In this way many authorization aspects become very simple to handle. The frontend for example just have to check, if the corresponding command map is in the db-view output to decide, if the corresponding button for the command should be enabled or disabled.</p><p>An example for a command that has an user input is <code>:todo/edit!</code>. It let's the user change the title of a todo. To receive the corresponding encrypted commmand the frontend requests the '/db-view/get' API endpoint with this payload:</p><pre><code class="clojure">{:todo/edit {:db/id 17592186045419
+             :todo/title &quot;New Title&quot;}}
+</code></pre><p>The response with the db-view output looks like this:</p><pre><code class="clojure">{:todo/edit {:todo/edit &quot;MkVO6khjHd5ZcqojwEpwaFRdjTPNmNiDyFJMHEzVGUUhQ1jq30NYQtIJzMrJkqxNiQJLbgHK7iK+IVsjZPhkU0w0yBqzpy1RwSJVjiNrT16XhGjxAcVWX7S0/vBT659NH9VeBnP6nSfmAnmi/mnbWF4200ZmjuVEQssbMSGMGwpDYfbJwMcl/I0BliT1HnHsKvtbjR9Q6hOzEJwDuTnVvw==&quot;}}
+</code></pre><p>A validation of the <code>:todo/title</code> could for example enforce a minimum length. Let's say we send this db-view input:</p><pre><code class="clojure">{:todo/edit {:db/id 17592186045419
+             :todo/title &quot;Ne&quot;}}
+</code></pre><p>Then we would receive this db-view output:</p><pre><code class="clojure">{:todo/edit {:error &quot;Title must be longer than 2 characters!&quot;}}
+</code></pre><p>Instead of the encrypted command the server sends the validation error. A more generic API would rather return an error id with some extra information like the expected minimal length. The frontend would then assemble an appropriate error message. Here the error message is directly included in the response, since a db-view API is exclusively written for a single frontend. The internationalization of the error messages can then also be done on the server-side.</p><p>Another common topic in the context of APIs are batch requests, meaning executing multiple API calls in one request. This reduces the latency, since only one instead of multiple requests are used. On the other hand things like returning validation errors get more complicated. For the db-view approach batch requests are unnecessary, since you can always introduce a new command type that combines multiple side effects. In this way it is straight forward to execute all side-effects in a single database transaction. Furthermore it reduces the possibilities for an attacker to mess with the order of the API calls or commands.</p><p>A drawback of the command concept is that it offers more possibilities for replay attacks. A simple mechanism that is already included in the example app, can help to prevent replay attacks. The server adds an <a href='https://en.wikipedia.org/wiki/Universally_unique_identifier'>UUID</a> as <code>:command/uuid</code> entry to each command map, while the command handler adds this <code>:command/uuid</code> to the transaction entity. There is a unique constraint on the <code>:command/uuid</code> Datomic attribute. Meaning a second transaction with the same <code>:command/uuid</code> will fail. Whereby it is ensured that this command is executed at most once (to avoid replay attacks).</p><p>This was the last part to introduce the db-view approach. I hope you find it useful and I would be happy to receive feedback (weber.maximilian at gmail.com).</p>
+</div>
+
+<div id="post-tags">
+    <br/> 
+    <b>Tags: </b>
+    
+    <a href="/tags/Clojure">Clojure</a>
+    
+    <a href="/tags/ClojureScript">ClojureScript</a>
+    
+    <a href="/tags/db-view">db-view</a>
+    
+    <a href="/tags/Datomic">Datomic</a>
+    
+</div>
+
+<br/>
+
+    <div id="prev-next">
+        
+        
+        <a class="right button" href="/blog/2019-08-05-introducing-db-view-part-2">Introducing db-view - Part 2 &raquo;</a>
+        
+    </div>
+
+    
+
+
+</div>
+
+<hr/>
+<div id="footercont" class="clearfix">Copyright &copy; 2019 Max Weber
+    <p>Powered by <a href="http://cryogenweb.org">Cryogen</a> | Free Website Template by <a title="free website templates" href="http://www.downloadwebsitetemplates.co.uk" rel="external">Download Website Templates</a></p>
+
+</div>
+</div>
+<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="/js/highlight.pack.js" type="text/javascript"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script src="/js/scripts.js" type="text/javascript"></script>
+
+
+</body>
+</html>
